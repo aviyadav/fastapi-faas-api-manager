@@ -1,4 +1,5 @@
 from typing import Callable, Dict
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Depends, HTTPException
 from sqlalchemy.orm import Session
 from models import SessionLocal, DynamicRoute, Base, engine
@@ -10,11 +11,18 @@ import logging
 
 Base.metadata.create_all(bind=engine)
 
-# Initialize FastAPI app
-app = FastAPI()
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("DynamicRoutes")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    await load_routes()
+    yield
+    # Shutdown (if needed)
+
+# Initialize FastAPI app
+app = FastAPI(lifespan=lifespan)
 
 def get_db():
     db = SessionLocal()
@@ -43,8 +51,7 @@ def create_dynamic_route_from_code(code: str) -> Callable:
         raise ValueError(f"Error in provided code: {str(e)}")
     
 # Add existing routes from the database
-@app.on_event("startup")
-def load_routes():
+async def load_routes():
     db = SessionLocal()
     routes = get_routes(db)
 
