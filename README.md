@@ -1,4 +1,4 @@
-# FastAPI FAAS APU Manager
+# FastAPI FAAS API Manager
 
 
 
